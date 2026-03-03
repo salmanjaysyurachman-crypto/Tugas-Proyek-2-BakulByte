@@ -155,11 +155,11 @@ Silakan buka file tersebut untuk melihat hasil observasi dan wawancara UMKM.
 
 <p align="center">
 
-[![Salman](https://img.shields.io/badge/Salman-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/username_salman)
+[![Salman](https://img.shields.io/badge/Salman-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/isalmanjay)
 
-[![Haysim](https://img.shields.io/badge/Haysim-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/username_haysim)
+[![Haysim](https://img.shields.io/badge/Haysim-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/muhhsyim)
 
-[![Furqon](https://img.shields.io/badge/Furqon-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/username_furqon)
+[![Furqon](https://img.shields.io/badge/Furqon-Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/furqon.thoriq)
 
 </p>
 
