@@ -58,12 +58,12 @@ Nama *Bakul Byte* berasal dari:
 ## 📂 Project Structure
 
 ```bash
-Bakul-Byte/
+Sistem Koperasi BuHa/
 │
 ├── docs/
 │   ├── Laporan-Observasi.pdf
 │   ├── Laporan-Wawancara.pdf
-│
+│    
 ├── src/
 │   ├── database.py
 │   ├── logic.py
@@ -81,7 +81,7 @@ Bakul-Byte/
 ### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/USERNAME/Bakul-Byte.git
+git clone https://github.com/salmanjaysyurachman-crypto/Bakul-Byte.git
 cd Bakul-Byte
 ```
 
