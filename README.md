@@ -23,7 +23,7 @@
 ## 👥 Our Team
 
 - Salman
-- Haysim
+- Hasyim
 - Furqon
 
 ---
