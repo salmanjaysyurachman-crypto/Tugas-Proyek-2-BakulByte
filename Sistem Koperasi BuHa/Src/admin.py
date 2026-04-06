@@ -1,7 +1,7 @@
 import pandas as pd
 from database import get_db
 from datetime import datetime
-import 
+import os
 
 def tambah_barang(nama, harga, stok):
     conn = get_db()
