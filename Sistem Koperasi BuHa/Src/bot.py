@@ -96,3 +96,43 @@ async def admin_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == 'Kembali':
         return await start(update, context)
     return MENU_ADMIN
+
+# Input Admin Callbacks
+async def get_t_nama(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['t_nama'] = update.message.text
+    await update.message.reply_text(f"Harga untuk {update.message.text}?")
+    return T_HARGA
+
+async def get_t_harga(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['t_harga'] = update.message.text
+    await update.message.reply_text("Jumlah stok awal?")
+    return T_STOK
+
+async def get_t_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        admin.tambah_barang(context.user_data['t_nama'], float(context.user_data['t_harga']), int(update.message.text))
+        await update.message.reply_text("✅ Berhasil disimpan!", reply_markup=get_admin_keyboard())
+    except:
+        await update.message.reply_text("❌ Gagal! Pastikan input benar.", reply_markup=get_admin_keyboard())
+    return MENU_ADMIN
+
+async def get_e_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['e_id'] = update.message.text
+    await update.message.reply_text("Tambah stok berapa?")
+    return E_STOK
+
+async def get_e_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        admin.edit_stok(int(context.user_data['e_id']), int(update.message.text))
+        await update.message.reply_text("✅ Stok diperbarui!", reply_markup=get_admin_keyboard())
+    except:
+        await update.message.reply_text("❌ Gagal.", reply_markup=get_admin_keyboard())
+    return MENU_ADMIN
+
+async def get_h_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        admin.hapus_barang(int(update.message.text))
+        await update.message.reply_text("🗑 Barang dihapus.", reply_markup=get_admin_keyboard())
+    except:
+        await update.message.reply_text("❌ Gagal.", reply_markup=get_admin_keyboard())
+    return MENU_ADMIN
