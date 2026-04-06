@@ -70,3 +70,29 @@ async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("Sampai jumpa!", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
     return MENU_UTAMA
+
+# --- LOGIKA ADMIN ---
+async def admin_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == 'Tambah Barang':
+        await update.message.reply_text("Masukkan NAMA barang baru:", reply_markup=ReplyKeyboardRemove())
+        return T_NAMA
+    elif text == 'Edit Stok':
+        await update.message.reply_text("Masukkan ID Barang:", reply_markup=ReplyKeyboardRemove())
+        return E_ID
+    elif text == 'Hapus Barang':
+        await update.message.reply_text("Masukkan ID Barang yang akan DIHAPUS:", reply_markup=ReplyKeyboardRemove())
+        return H_ID
+    elif text == 'Lihat Barang':
+        items = pembeli.get_semua_barang()
+        msg = "📦 **STOK GUDANG**\n\n" + "\n".join([f"ID: {i['id']} | {i['nama']} | Stok: {i['stok']} | Rp{i['harga']:,.0f}" for i in items])
+        await update.message.reply_text(msg if items else "Gudang kosong.", parse_mode='Markdown')
+        return MENU_ADMIN
+    elif 'Laporan' in text:
+        mode = 'harian' if 'Harian' in text else 'bulanan'
+        file_path = admin.export_laporan(mode)
+        await update.message.reply_document(document=open(file_path, 'rb'), caption=f"Laporan {mode}")
+        return MENU_ADMIN
+    elif text == 'Kembali':
+        return await start(update, context)
+    return MENU_ADMIN
