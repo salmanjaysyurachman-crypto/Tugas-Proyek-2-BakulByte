@@ -14,3 +14,15 @@ def hapus_barang(id_barang):
     conn.execute("DELETE FROM produk WHERE id = ?", (id_barang,))
     conn.commit()
     conn.close()
+
+def edit_stok(id_barang, stok_baru):
+    conn = get_db()
+    conn.execute("UPDATE produk SET stok = stok + ? WHERE id = ?", (stok_baru, id_barang))
+    conn.commit()
+    conn.close()
+
+def export_laporan(mode='harian'):
+    conn = get_db()
+    query = "SELECT * FROM transaksi"
+    if mode == 'harian':
+        query += " WHERE tanggal = CURRENT_DATE"
