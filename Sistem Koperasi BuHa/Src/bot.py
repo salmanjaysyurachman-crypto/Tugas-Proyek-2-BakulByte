@@ -19,3 +19,10 @@ logging.basicConfig(
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
+
+# Definisi States
+(MENU_UTAMA, MENU_ADMIN, MENU_PEMBELI, 
+ T_NAMA, T_HARGA, T_STOK, 
+ E_ID, E_STOK, 
+ H_ID,
+ B_ID, B_QTY, KONFIRMASI_BELI) = range(12)
