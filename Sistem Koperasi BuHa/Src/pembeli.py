@@ -20,3 +20,14 @@ def proses_transaksi(user_id, keranjang):
                 total_akhir += subtotal
                 cursor.execute("UPDATE produk SET stok = stok - ? WHERE id = ?", (qty, item_id))
                 list_item.append(f"🔹 {barang['nama']} x{qty} (Rp{subtotal:,.0f})")
+        ringkasan = "\n".join(list_item)
+        cursor.execute("INSERT INTO transaksi (user_id, total_harga, items) VALUES (?, ?, ?)", 
+                       (str(user_id), total_akhir, ringkasan))
+        conn.commit()
+        except Exception as e:
+        conn.rollback()
+        return "0", "Gagal memproses."
+    finally:
+        conn.close()
+        
+    return f"{total_akhir:,.0f}", ringkasan
