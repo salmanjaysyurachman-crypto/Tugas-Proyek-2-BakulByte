@@ -26,3 +26,18 @@ ADMIN_ID = os.getenv("ADMIN_ID")
  E_ID, E_STOK, 
  H_ID,
  B_ID, B_QTY, KONFIRMASI_BELI) = range(12)
+
+# --- KEYBOARD HELPERS ---
+def get_main_keyboard():
+    return ReplyKeyboardMarkup([['Admin', 'Pembeli'], ['Keluar']], resize_keyboard=True)
+
+def get_admin_keyboard():
+    return ReplyKeyboardMarkup([
+        ['Tambah Barang', 'Edit Stok'],
+        ['Hapus Barang', 'Lihat Barang'],
+        ['Laporan Harian', 'Laporan Bulanan'],
+        ['Kembali']
+    ], resize_keyboard=True)
+
+def get_pembeli_keyboard():
+    return ReplyKeyboardMarkup([['Lihat Barang', 'Beli Barang'], ['Kembali']], resize_keyboard=True)
