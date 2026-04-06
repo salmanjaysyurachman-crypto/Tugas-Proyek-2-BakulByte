@@ -136,3 +136,56 @@ async def get_h_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         await update.message.reply_text("❌ Gagal.", reply_markup=get_admin_keyboard())
     return MENU_ADMIN
+
+# --- LOGIKA PEMBELI ---
+async def pembeli_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == 'Lihat Barang':
+        items = pembeli.get_semua_barang()
+        msg = "🛒 **BARANG TERSEDIA**\n\n" + "\n".join([f"ID: {i['id']} | {i['nama']} | Rp{i['harga']:,.0f}" for i in items])
+        await update.message.reply_text(msg if items else "Stok kosong.", parse_mode='Markdown')
+        return MENU_PEMBELI
+    elif text == 'Beli Barang':
+        items = pembeli.get_semua_barang()
+        if not items:
+            await update.message.reply_text("Stok kosong.")
+            return MENU_PEMBELI
+        msg = "📋 **DAFTAR ID**\n\n" + "\n".join([f"🆔 {i['id']} - {i['nama']} (Rp{i['harga']:,.0f})" for i in items])
+        msg += "\n\nMasukkan **ID Barang** yang ingin dibeli:"
+        context.user_data['keranjang'] = {}
+        await update.message.reply_text(msg, parse_mode='Markdown', reply_markup=ReplyKeyboardRemove())
+        return B_ID
+    elif text == 'Kembali':
+        return await start(update, context)
+    return MENU_PEMBELI
+
+async def get_b_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['current_id'] = update.message.text
+    await update.message.reply_text("Beli berapa?")
+    return B_QTY
+
+async def get_b_qty(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        item_id = int(context.user_data['current_id'])
+        qty = int(update.message.text)
+        context.user_data['keranjang'][item_id] = qty
+        kb = ReplyKeyboardMarkup([['Tambah Barang Lagi', 'Selesai & Bayar']], resize_keyboard=True)
+        await update.message.reply_text("Masuk keranjang!", reply_markup=kb)
+        return KONFIRMASI_BELI
+    except:
+        await update.message.reply_text("Masukkan angka!")
+        return B_QTY
+
+async def konfirmasi_beli_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    pilihan = update.message.text
+    if pilihan == 'Tambah Barang Lagi':
+        await update.message.reply_text("Masukkan ID Barang selanjutnya:", reply_markup=ReplyKeyboardRemove())
+        return B_ID
+    elif pilihan == 'Selesai & Bayar':
+        status_msg = await update.message.reply_text("⏳ Sedang memproses struk...")
+        total, ringkasan = pembeli.proses_transaksi(update.effective_user.id, context.user_data.get('keranjang', {}))
+        struk = f"🧾 **STRUK BAKULBYTE**\n---\n{ringkasan}\n---\n💰 **TOTAL: Rp{total}**"
+        await status_msg.delete()
+        await update.message.reply_text(struk, parse_mode='Markdown', reply_markup=get_pembeli_keyboard())
+        return MENU_PEMBELI
+    return MENU_PEMBELI
