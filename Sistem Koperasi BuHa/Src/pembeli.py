@@ -24,7 +24,7 @@ def proses_transaksi(user_id, keranjang):
         cursor.execute("INSERT INTO transaksi (user_id, total_harga, items) VALUES (?, ?, ?)", 
                        (str(user_id), total_akhir, ringkasan))
         conn.commit()
-        except Exception as e:
+    except Exception as e:
         conn.rollback()
         return "0", "Gagal memproses."
     finally:
