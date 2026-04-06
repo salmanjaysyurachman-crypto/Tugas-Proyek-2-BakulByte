@@ -26,3 +26,15 @@ def export_laporan(mode='harian'):
     query = "SELECT * FROM transaksi"
     if mode == 'harian':
         query += " WHERE tanggal = CURRENT_DATE"
+
+    # Membaca data ke DataFrame Pandas
+    df = pd.read_sql_query(query, conn)
+    
+    # Nama file unik berdasarkan waktu
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"laporan_{mode}_{timestamp}.xlsx"
+    
+    # Export ke Excel
+    df.to_excel(filename, index=False)
+    conn.close()
+    return filename
