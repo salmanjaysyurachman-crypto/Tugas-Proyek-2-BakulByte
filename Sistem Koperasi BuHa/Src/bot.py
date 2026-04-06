@@ -189,3 +189,34 @@ async def konfirmasi_beli_handler(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text(struk, parse_mode='Markdown', reply_markup=get_pembeli_keyboard())
         return MENU_PEMBELI
     return MENU_PEMBELI
+
+# --- MAIN RUNNER ---
+def main():
+    database.init_db()
+    app = Application.builder().token(TOKEN).build()
+    
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            MENU_UTAMA: [MessageHandler(filters.TEXT & ~filters.COMMAND, menu_utama_handler)],
+            MENU_ADMIN: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_features)],
+            T_NAMA: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_t_nama)],
+            T_HARGA: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_t_harga)],
+            T_STOK: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_t_stok_final)],
+            E_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_e_id)],
+            E_STOK: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_e_stok_final)],
+            H_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_h_id)],
+            MENU_PEMBELI: [MessageHandler(filters.TEXT & ~filters.COMMAND, pembeli_features)],
+            B_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_b_id)],
+            B_QTY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_b_qty)],
+            KONFIRMASI_BELI: [MessageHandler(filters.TEXT & ~filters.COMMAND, konfirmasi_beli_handler)],
+        },
+        fallbacks=[CommandHandler('start', start)]
+    )
+    
+    app.add_handler(conv_handler)
+    print("🚀 Bot BakulByte Berjalan...")
+    app.run_polling()
+
+if __name__ == '__main__':
+    main()
