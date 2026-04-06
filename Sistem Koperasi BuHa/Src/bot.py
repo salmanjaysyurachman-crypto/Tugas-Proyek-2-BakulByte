@@ -41,3 +41,32 @@ def get_admin_keyboard():
 
 def get_pembeli_keyboard():
     return ReplyKeyboardMarkup([['Lihat Barang', 'Beli Barang'], ['Kembali']], resize_keyboard=True)
+
+# --- FUNGSI ENTRY POINT ---
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🏪 **Selamat Datang di Koperasi BakulByte!**\nSilakan pilih role Anda:",
+        reply_markup=get_main_keyboard(),
+        parse_mode='Markdown'
+    )
+    return MENU_UTAMA
+
+async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    pilihan = update.message.text
+    user_id = str(update.effective_user.id)
+
+    if pilihan == 'Admin':
+        if user_id != ADMIN_ID:
+            await update.message.reply_text("❌ Akses Ditolak! ID Anda tidak terdaftar.")
+            return MENU_UTAMA
+        await update.message.reply_text("🛠 **Mode Admin Aktif**", reply_markup=get_admin_keyboard(), parse_mode='Markdown')
+        return MENU_ADMIN
+    
+    elif pilihan == 'Pembeli':
+        await update.message.reply_text(f"👋 Halo {update.effective_user.first_name}!", reply_markup=get_pembeli_keyboard(), parse_mode='Markdown')
+        return MENU_PEMBELI
+    
+    elif pilihan == 'Keluar':
+        await update.message.reply_text("Sampai jumpa!", reply_markup=ReplyKeyboardRemove())
+        return ConversationHandler.END
+    return MENU_UTAMA
