@@ -18,10 +18,10 @@ for key, val in [("BOT_TOKEN", TOKEN), ("ADMIN_ID", ADMIN_ID), ("GROQ_API_KEY", 
 
 (MENU_UTAMA, MENU_ADMIN, MENU_PEMBELI, 
  T_NAMA, T_HARGA, T_STOK, 
- E_ID, E_STOK, H_ID, KONFIRMASI HAPUS,
- B_ID, B_QTY, KONFIRMASI_BELI) = range(14)
+ E_ID, E_STOK, H_ID, KONFIRMASI_HAPUS,
+ B_ID, B_QTY, KONFIRMASI_BELI, AI_CHAT) = range(14)
 
-ef ikb(*rows): return InlineKeyboardMarkup([[InlineKeyboardButton(t, callback_data=d) for t, d in row] for row in rows])
+def ikb(*rows): return InlineKeyboardMarkup([[InlineKeyboardButton(t, callback_data=d) for t, d in row] for row in rows])
 BACK_HOME   = ikb([("🔙 Kembali", "back_home")])
 KB_WELCOME  = ikb([("🛒 Lihat Barang","menu_lihat"),("👤 Mode Admin","menu_admin")],
                    [("🛍 Beli Barang","menu_beli"),  ("🤖 Tanya AI","menu_ai")],
