@@ -17,6 +17,7 @@ KUNING_AKSEN= colors.HexColor("#FFD166")
 
 PAGE_W, PAGE_H = A6  # 105 x 148 mm
 
+
 def _draw_header(c: canvas.Canvas, page_w, page_h):
     """Blok header hijau dengan nama toko & ikon."""
     header_h = 38 * mm
@@ -40,14 +41,15 @@ def _draw_header(c: canvas.Canvas, page_w, page_h):
     # Nama toko
     c.setFillColor(PUTIH)
     c.setFont("Helvetica-Bold", 13)
-    c.drawCentredString(page_w / 2, page_h - 24 * mm, "KOPERASI BUHA")
+    c.drawCentredString(page_w / 2, page_h - 24 * mm, "KOPERASI BAKULBYTE")
 
     # Tagline
     c.setFillColor(HIJAU_MUDA)
     c.setFont("Helvetica-Oblique", 7)
     c.drawCentredString(page_w / 2, page_h - 29 * mm, "Belanja mudah, harga bersahabat")
 
-    def _draw_info_row(c: canvas.Canvas, y, label, value, page_w):
+
+def _draw_info_row(c: canvas.Canvas, y, label, value, page_w):
     """Baris info dua kolom (label kiri, value kanan)."""
     margin = 8 * mm
     c.setFont("Helvetica", 7)
@@ -74,6 +76,7 @@ def _draw_item_row(c: canvas.Canvas, y, nama, qty, harga_satuan, subtotal, page_
     col_qty   = 22 * mm
     col_harga = 50 * mm
 
+    # Nama barang
     c.setFont("Helvetica-Bold", 7.5)
     c.setFillColor(ABU_GELAP)
     c.drawString(margin, y, nama[:28])  # truncate panjang
@@ -106,6 +109,7 @@ def _draw_total_box(c: canvas.Canvas, y, total, page_w):
     c.drawRightString(page_w - margin - 4*mm, mid_y, f"Rp{total:,.0f}")
 
     return y - box_h - 4*mm
+
 
 def _draw_footer(c: canvas.Canvas, y, page_w, no_struk):
     margin = 8 * mm
@@ -153,7 +157,6 @@ def buat_struk_pdf(
     Returns:
         Path file PDF yang dihasilkan.
     """
-
     if output_path is None:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_path = f"struk_{user_id}_{ts}.pdf"
@@ -215,3 +218,16 @@ def buat_struk_pdf(
 
     c.save()
     return output_path
+
+
+# ── TEST (jalankan langsung untuk preview) ────────────────────
+if __name__ == "__main__":
+    contoh_items = [
+        {"nama": "Indomie Goreng",   "qty": 3, "harga": 3500,  "subtotal": 10500},
+        {"nama": "Teh Botol Sosro",  "qty": 2, "harga": 5000,  "subtotal": 10000},
+        {"nama": "Beng-Beng Wafer",  "qty": 5, "harga": 2500,  "subtotal": 12500},
+        {"nama": "Aqua 600ml",       "qty": 1, "harga": 4000,  "subtotal": 4000},
+    ]
+    total = sum(i["subtotal"] for i in contoh_items)
+    path = buat_struk_pdf("Budi Santoso", 123456789, contoh_items, total, "test_struk.pdf")
+    print(f"✅ Struk dibuat: {path}")
