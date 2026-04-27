@@ -69,6 +69,50 @@ def get_produk_by_id(item_id):
     conn.close()
     return item
 
+@catch_and_report("start")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    target = update.callback_query.message if update.callback_query else update.message
+    await kirim_welcome(target, context)
+    return MENU_UTAMA
+
+# ── /ai command ───────────────────────────────────────────────
+@catch_and_report("ai_command")
+async def ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if not context.args:
+        await update.message.reply_text(
+            "🤖 *BakulBot AI*\n\n• `/ai <pertanyaan>` — tanya seputar produk\n• `/ai reset` — mulai percakapan baru",
+            parse_mode='Markdown'
+        )
+        return
+    pesan = " ".join(context.args)
+    if pesan.lower() == "reset":
+        reset_riwayat(user_id)
+        await update.message.reply_text("🔄 Riwayat obrolan AI direset!")
+        return
+    await update.message.chat.send_action("typing")
+    balasan = tanya_ai(user_id, pesan)
+    await update.message.reply_text(f"🤖 *BakulBot AI:*\n\n{balasan}", parse_mode='Markdown', reply_markup=KB_AI)
+
+# ── [BARU] /test_error — Simulasi error untuk uji logging ─────
+async def test_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Command khusus Admin untuk menguji sistem logging & notifikasi crash.
+    Hanya bisa dijalankan oleh Admin (berdasarkan ADMIN_ID di .env).
+
+    Cara pakai:
+        /test_error             → simulasi ZeroDivisionError
+        /test_error db          → simulasi error database
+        /test_error value       → simulasi ValueError
+    """
+    user_id = str(update.effective_user.id)
+
+    # Proteksi: hanya Admin yang boleh
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("❌ Perintah ini khusus Admin.")
+        return
+
+
 async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pilihan = update.message.text
     user_id = str(update.effective_user.id)
