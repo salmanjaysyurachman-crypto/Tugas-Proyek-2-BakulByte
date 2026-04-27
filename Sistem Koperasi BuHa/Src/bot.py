@@ -359,6 +359,78 @@ async def admin_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return MENU_ADMIN
 
+@catch_and_report("get_t_nama")
+async def get_t_nama(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['t_nama'] = update.message.text.strip()
+    await update.message.reply_text(f"Harga untuk *{context.user_data['t_nama']}*? (contoh: 5000)", parse_mode='Markdown')
+    return T_HARGA
+
+@catch_and_report("get_t_harga")
+async def get_t_harga(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        harga = float(update.message.text.replace(',', '.'))
+        if harga <= 0: raise ValueError
+        context.user_data['t_harga'] = harga
+        await update.message.reply_text("Jumlah stok awal?")
+        return T_STOK
+    except ValueError:
+        await update.message.reply_text("❌ Harga tidak valid! Masukkan angka positif:")
+        return T_HARGA
+
+@catch_and_report("get_t_stok_final")
+async def get_t_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        stok = int(update.message.text)
+        if stok < 0: raise ValueError
+        admin.tambah_barang(context.user_data['t_nama'], context.user_data['t_harga'], stok)
+        await update.message.reply_text(f"✅ *{context.user_data['t_nama']}* berhasil ditambahkan!",
+                                         reply_markup=KB_ADMIN, parse_mode='Markdown')
+    except ValueError:
+        await update.message.reply_text("❌ Stok tidak valid! Masukkan angka bulat positif:")
+        return T_STOK
+    except Exception as e:
+        logger.error(f"Gagal tambah barang: {e}", exc_info=True)
+        await update.message.reply_text("❌ Gagal menyimpan.", reply_markup=KB_ADMIN)
+    return MENU_ADMIN
+
+# ── Admin: Edit Stok ──────────────────────────────────────────
+@catch_and_report("get_e_id")
+async def get_e_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        item_id = int(update.message.text)
+        item = get_produk_by_id(item_id)
+        if not item:
+            await update.message.reply_text("❌ ID tidak ditemukan!", reply_markup=KB_ADMIN)
+            return MENU_ADMIN
+        context.user_data['e_id']   = item_id
+        context.user_data['e_nama'] = item['nama']
+        await update.message.reply_text(
+            f"Produk: *{item['nama']}* | Stok saat ini: *{item['stok']}*\n\nTambah stok berapa?",
+            parse_mode='Markdown'
+        )
+        return E_STOK
+    except ValueError:
+        await update.message.reply_text("❌ Masukkan angka!", reply_markup=KB_ADMIN)
+        return MENU_ADMIN
+
+@catch_and_report("get_e_stok_final")
+async def get_e_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        tambahan = int(update.message.text)
+        admin.edit_stok(context.user_data['e_id'], tambahan)
+        await update.message.reply_text(
+            f"✅ Stok *{context.user_data['e_nama']}* ditambah *{tambahan}*!",
+            reply_markup=KB_ADMIN, parse_mode='Markdown'
+        )
+    except ValueError:
+        await update.message.reply_text("❌ Masukkan angka bulat!", reply_markup=KB_ADMIN)
+        return E_STOK
+    except Exception as e:
+        logger.error(f"Gagal edit stok: {e}", exc_info=True)
+        await update.message.reply_text("❌ Gagal mengupdate stok.", reply_markup=KB_ADMIN)
+    return MENU_ADMIN
+
+    
 async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pilihan = update.message.text
     user_id = str(update.effective_user.id)
