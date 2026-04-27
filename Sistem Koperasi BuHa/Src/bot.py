@@ -75,7 +75,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await kirim_welcome(target, context)
     return MENU_UTAMA
 
-# ── /ai command ───────────────────────────────────────────────
 @catch_and_report("ai_command")
 async def ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -94,7 +93,7 @@ async def ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     balasan = tanya_ai(user_id, pesan)
     await update.message.reply_text(f"🤖 *BakulBot AI:*\n\n{balasan}", parse_mode='Markdown', reply_markup=KB_AI)
 
-# ── [BARU] /test_error — Simulasi error untuk uji logging ─────
+
 async def test_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Command khusus Admin untuk menguji sistem logging & notifikasi crash.
@@ -107,10 +106,110 @@ async def test_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     user_id = str(update.effective_user.id)
 
-    # Proteksi: hanya Admin yang boleh
     if user_id != ADMIN_ID:
         await update.message.reply_text("❌ Perintah ini khusus Admin.")
         return
+    
+    jenis = context.args[0].lower() if context.args else "zero"
+
+    await update.message.reply_text(
+        f"🧪 *Menjalankan simulasi error: `{jenis}`*\n"
+        f"Cek `error_log.txt` dan notifikasi Telegram Admin...",
+        parse_mode="Markdown"
+    )
+
+    try:
+        if jenis == "db":
+            conn = database.get_db()
+            conn.execute("SELECT * FROM tabel_tidak_ada")
+        elif jenis == "value":
+            int("ini_bukan_angka")
+        else:
+            _ = 1 / 0
+
+    except Exception as exc:
+        logger.error(
+            f"[test_error/{jenis}] Simulasi error oleh Admin (user_id={user_id}): "
+            f"{type(exc).__name__}: {exc}",
+            exc_info=True
+        )
+        await kirim_notif_crash(
+            bot=context.bot,
+            exc=exc,
+            konteks=f"test_error/{jenis}",
+            user_id=user_id,
+            extra=f"Ini adalah simulasi — bukan error nyata. Jenis: {jenis}"
+        )
+        await update.message.reply_text(
+            "✅ *Simulasi selesai!*\n\n"
+            "Hasil yang diharapkan:\n"
+            "• File `error_log.txt` sudah diperbarui\n"
+            "• Notifikasi crash sudah dikirim ke Admin\n\n"
+            f"Error yang disimulasikan: `{type(exc).__name__}: {exc}`",
+            parse_mode="Markdown"
+        )
+MENU_TEKS = {
+    "menu_kontak": (
+        "📞 *Hubungi Kami*\n\n"
+        "📱 WhatsApp: +62 858-6149-3082\n"
+        "📧 Email: KoperasiBuHa@koperasi.id\n"
+        "📍 Alamat: Jl. Sulawesi No. 1, Pemalang\n\n_Kami siap membantu Anda!_"
+    ),
+    "menu_tentang": (
+        "ℹ️ *Tentang Koperasi BuHa*\n\n"
+        "Koperasi BuHa adalah koperasi digital untuk kebutuhan sehari-hari.\n\n"
+        "🎯 *Visi:* Koperasi modern yang inklusif dan terpercaya.\n"
+        "💡 *Misi:* Layanan belanja yang mudah, cepat, dan transparan.\n\n"
+        "_Bersama BakulByte, belanja jadi lebih mudah!_ 🚀"
+    ),
+    "menu_jam": (
+        "🕐 *Jam Operasional*\n\n"
+        "Senin - Jumat : 08.00 - 17.00 WIB\n"
+        "Sabtu         : 08.00 - 13.00 WIB\n"
+        "Minggu        : Tutup\n\n_Bot tetap aktif 24 jam!_ ⚡"
+    ),
+}
+
+@catch_and_report("inline_menu_handler")
+async def inline_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query   = update.callback_query
+    await query.answer()
+    data    = query.data
+    user_id = str(update.effective_user.id)
+
+    if data == "menu_lihat":
+        msg = fmt_produk(pembeli.get_semua_barang())
+        await query.message.reply_text(msg, parse_mode='Markdown', reply_markup=BACK_HOME)
+
+    elif data == "menu_beli":
+        items = pembeli.get_semua_barang()
+        if not items:
+            await query.message.reply_text("🏪 Stok sedang kosong.")
+            return MENU_UTAMA
+        context.user_data['keranjang'] = {}
+        msg = fmt_produk(items, "beli") + "\n\nMasukkan *ID Barang* yang ingin dibeli:"
+        await query.message.reply_text(msg, parse_mode='Markdown')
+        return B_ID
+
+    elif data == "menu_admin":
+        if user_id != ADMIN_ID:
+            await query.message.reply_text("❌ Akses Ditolak!")
+            return MENU_UTAMA
+        await query.message.reply_text("🛠 *Mode Admin Aktif*\nSelamat datang, Admin!",
+                                        reply_markup=KB_ADMIN, parse_mode='Markdown')
+        return MENU_ADMIN
+
+    elif data == "menu_ai":
+        await query.message.reply_text(AI_INTRO_TEXT, parse_mode='Markdown', reply_markup=KB_AI)
+        return AI_CHAT
+
+    elif data in MENU_TEKS:
+        await query.message.reply_text(MENU_TEKS[data], parse_mode='Markdown', reply_markup=BACK_HOME)
+
+    elif data == "back_home":
+        await kirim_welcome(query.message, context)
+
+    return MENU_UTAMA
 
 
 async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
