@@ -26,6 +26,8 @@ def export_laporan(mode='harian'):
     query = "SELECT * FROM transaksi"
     if mode == 'harian':
         query += " WHERE tanggal = CURRENT_DATE"
+    elif mode == 'bulanan':
+        query += " WHERE strftime('%Y-%m', tanggal) = strftime('%Y-%m', 'now')"
 
     # Membaca data ke DataFrame Pandas
     df = pd.read_sql_query(query, conn)
