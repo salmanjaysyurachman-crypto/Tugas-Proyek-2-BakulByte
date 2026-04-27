@@ -10,24 +10,45 @@ def proses_transaksi(user_id, keranjang):
     conn = get_db()
     cursor = conn.cursor()
     total_akhir = 0
-    list_item = []
+    list_item   = []
+    items_data  = []   # ← data terstruktur untuk PDF
 
     try:
         for item_id, qty in keranjang.items():
-            barang = cursor.execute("SELECT * FROM produk WHERE id = ?", (item_id,)).fetchone()
+            barang = cursor.execute(
+                "SELECT * FROM produk WHERE id = ?", (item_id,)
+            ).fetchone()
+
             if barang and barang['stok'] >= qty:
                 subtotal = barang['harga'] * qty
                 total_akhir += subtotal
-                cursor.execute("UPDATE produk SET stok = stok - ? WHERE id = ?", (qty, item_id))
-                list_item.append(f"🔹 {barang['nama']} x{qty} (Rp{subtotal:,.0f})")
+
+                cursor.execute(
+                    "UPDATE produk SET stok = stok - ? WHERE id = ?",
+                    (qty, item_id)
+                )
+
+                list_item.append(
+                    f"🔹 {barang['nama']} x{qty} (Rp{subtotal:,.0f})"
+                )
+                items_data.append({
+                    "nama"    : barang['nama'],
+                    "qty"     : qty,
+                    "harga"   : barang['harga'],
+                    "subtotal": subtotal,
+                })
+
         ringkasan = "\n".join(list_item)
-        cursor.execute("INSERT INTO transaksi (user_id, total_harga, items) VALUES (?, ?, ?)", 
-                       (str(user_id), total_akhir, ringkasan))
+        cursor.execute(
+            "INSERT INTO transaksi (user_id, total_harga, items) VALUES (?, ?, ?)",
+            (str(user_id), total_akhir, ringkasan)
+        )
         conn.commit()
+
     except Exception as e:
         conn.rollback()
-        return "0", "Gagal memproses."
+        return "0", "Gagal memproses.", []
     finally:
         conn.close()
-        
-    return f"{total_akhir:,.0f}", ringkasan
+
+    return f"{total_akhir:,.0f}", ringkasan, items_data
