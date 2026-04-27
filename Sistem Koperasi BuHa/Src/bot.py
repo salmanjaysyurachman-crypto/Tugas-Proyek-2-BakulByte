@@ -305,8 +305,8 @@ async def inline_keranjang_handler(update: Update, context: ContextTypes.DEFAULT
                     total=float(total_str.replace(",", ""))
                 )
                 with open(pdf_path, 'rb') as f:
-                    await query.message.reply_document(document=f, filename="Struk_BakulByte.pdf",
-                                                        caption="📄 Struk PDF kamu sudah siap!")
+                    await query.message.reply_document(document=f, filename="STRUK_BUHA.pdf",
+                                                        caption="📄 BAWA STRUK KE KASIR !")
             except Exception as e:
                 logger.error(f"Gagal kirim PDF: {e}", exc_info=True)
             finally:
