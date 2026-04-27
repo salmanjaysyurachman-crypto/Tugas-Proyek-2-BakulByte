@@ -430,173 +430,131 @@ async def get_e_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Gagal mengupdate stok.", reply_markup=KB_ADMIN)
     return MENU_ADMIN
 
-    
-async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    pilihan = update.message.text
-    user_id = str(update.effective_user.id)
-
-    if pilihan == 'Admin':
-        if user_id != ADMIN_ID:
-            await update.message.reply_text("❌ Akses Ditolak! ID Anda tidak terdaftar.")
-            return MENU_UTAMA
-        await update.message.reply_text("🛠 **Mode Admin Aktif**", reply_markup=get_admin_keyboard(), parse_mode='Markdown')
-        return MENU_ADMIN
-    
-    elif pilihan == 'Pembeli':
-        await update.message.reply_text(f"👋 Halo {update.effective_user.first_name}!", reply_markup=get_pembeli_keyboard(), parse_mode='Markdown')
-        return MENU_PEMBELI
-    
-    elif pilihan == 'Keluar':
-        await update.message.reply_text("Sampai jumpa!", reply_markup=ReplyKeyboardRemove())
-        return ConversationHandler.END
-    return MENU_UTAMA
-
-# --- LOGIKA ADMIN ---
-async def admin_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if text == 'Tambah Barang':
-        await update.message.reply_text("Masukkan NAMA barang baru:", reply_markup=ReplyKeyboardRemove())
-        return T_NAMA
-    elif text == 'Edit Stok':
-        await update.message.reply_text("Masukkan ID Barang:", reply_markup=ReplyKeyboardRemove())
-        return E_ID
-    elif text == 'Hapus Barang':
-        await update.message.reply_text("Masukkan ID Barang yang akan DIHAPUS:", reply_markup=ReplyKeyboardRemove())
-        return H_ID
-    elif text == 'Lihat Barang':
-        items = pembeli.get_semua_barang()
-        msg = "📦 **STOK GUDANG**\n\n" + "\n".join([f"ID: {i['id']} | {i['nama']} | Stok: {i['stok']} | Rp{i['harga']:,.0f}" for i in items])
-        await update.message.reply_text(msg if items else "Gudang kosong.", parse_mode='Markdown')
-        return MENU_ADMIN
-    elif 'Laporan' in text:
-        mode = 'harian' if 'Harian' in text else 'bulanan'
-        file_path = admin.export_laporan(mode)
-        await update.message.reply_document(document=open(file_path, 'rb'), caption=f"Laporan {mode}")
-        return MENU_ADMIN
-    elif text == 'Kembali':
-        return await start(update, context)
-    return MENU_ADMIN
-
-# Input Admin Callbacks
-async def get_t_nama(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['t_nama'] = update.message.text
-    await update.message.reply_text(f"Harga untuk {update.message.text}?")
-    return T_HARGA
-
-async def get_t_harga(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['t_harga'] = update.message.text
-    await update.message.reply_text("Jumlah stok awal?")
-    return T_STOK
-
-async def get_t_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        admin.tambah_barang(context.user_data['t_nama'], float(context.user_data['t_harga']), int(update.message.text))
-        await update.message.reply_text("✅ Berhasil disimpan!", reply_markup=get_admin_keyboard())
-    except:
-        await update.message.reply_text("❌ Gagal! Pastikan input benar.", reply_markup=get_admin_keyboard())
-    return MENU_ADMIN
-
-async def get_e_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['e_id'] = update.message.text
-    await update.message.reply_text("Tambah stok berapa?")
-    return E_STOK
-
-async def get_e_stok_final(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        admin.edit_stok(int(context.user_data['e_id']), int(update.message.text))
-        await update.message.reply_text("✅ Stok diperbarui!", reply_markup=get_admin_keyboard())
-    except:
-        await update.message.reply_text("❌ Gagal.", reply_markup=get_admin_keyboard())
-    return MENU_ADMIN
-
+@catch_and_report("get_h_id")
 async def get_h_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        admin.hapus_barang(int(update.message.text))
-        await update.message.reply_text("🗑 Barang dihapus.", reply_markup=get_admin_keyboard())
-    except:
-        await update.message.reply_text("❌ Gagal.", reply_markup=get_admin_keyboard())
+        item_id = int(update.message.text)
+        item = get_produk_by_id(item_id)
+        if not item:
+            await update.message.reply_text("❌ ID tidak ditemukan!", reply_markup=KB_ADMIN)
+            return MENU_ADMIN
+        context.user_data['h_id']   = item_id
+        context.user_data['h_nama'] = item['nama']
+        await update.message.reply_text(
+            f"⚠️ Yakin ingin menghapus *{item['nama']}*?", parse_mode='Markdown',
+            reply_markup=ReplyKeyboardMarkup([['Ya, Hapus', 'Batal']], resize_keyboard=True)
+        )
+        return KONFIRMASI_HAPUS
+    except ValueError:
+        await update.message.reply_text("❌ Masukkan angka!", reply_markup=KB_ADMIN)
+        return MENU_ADMIN
+
+@catch_and_report("eksekusi_hapus")
+async def eksekusi_hapus(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.text == 'Ya, Hapus':
+        try:
+            admin.hapus_barang(context.user_data['h_id'])
+            await update.message.reply_text(f"🗑 *{context.user_data['h_nama']}* berhasil dihapus.",
+                                             reply_markup=KB_ADMIN, parse_mode='Markdown')
+        except Exception as e:
+            logger.error(f"Gagal hapus: {e}", exc_info=True)
+            await update.message.reply_text("❌ Gagal menghapus.", reply_markup=KB_ADMIN)
+    else:
+        await update.message.reply_text("❌ Penghapusan dibatalkan.", reply_markup=KB_ADMIN)
     return MENU_ADMIN
 
-# --- LOGIKA PEMBELI ---
-async def pembeli_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if text == 'Lihat Barang':
-        items = pembeli.get_semua_barang()
-        msg = "🛒 **BARANG TERSEDIA**\n\n" + "\n".join([f"ID: {i['id']} | {i['nama']} | Rp{i['harga']:,.0f}" for i in items])
-        await update.message.reply_text(msg if items else "Stok kosong.", parse_mode='Markdown')
-        return MENU_PEMBELI
-    elif text == 'Beli Barang':
-        items = pembeli.get_semua_barang()
-        if not items:
-            await update.message.reply_text("Stok kosong.")
-            return MENU_PEMBELI
-        msg = "📋 **DAFTAR ID**\n\n" + "\n".join([f"🆔 {i['id']} - {i['nama']} (Rp{i['harga']:,.0f})" for i in items])
-        msg += "\n\nMasukkan **ID Barang** yang ingin dibeli:"
-        context.user_data['keranjang'] = {}
-        await update.message.reply_text(msg, parse_mode='Markdown', reply_markup=ReplyKeyboardRemove())
-        return B_ID
-    elif text == 'Kembali':
-        return await start(update, context)
-    return MENU_PEMBELI
-
+# ── Pembeli: Proses Belanja ───────────────────────────────────
+@catch_and_report("get_b_id")
 async def get_b_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['current_id'] = update.message.text
-    await update.message.reply_text("Beli berapa?")
-    return B_QTY
+    try:
+        item_id = int(update.message.text)
+        items   = pembeli.get_semua_barang()
+        item    = next((i for i in items if i['id'] == item_id), None)
+        if not item:
+            await update.message.reply_text("❌ ID tidak ditemukan atau stok habis! Masukkan ID yang valid:")
+            return B_ID
+        context.user_data.update({'current_id': item_id, 'current_nama': item['nama'], 'current_stok': item['stok']})
+        await update.message.reply_text(
+            f"✅ *{item['nama']}*\nHarga: Rp{item['harga']:,.0f} | Stok tersedia: {item['stok']}\n\nBeli berapa?",
+            parse_mode='Markdown'
+        )
+        return B_QTY
+    except ValueError:
+        await update.message.reply_text("❌ Masukkan angka ID yang valid!")
+        return B_ID
 
+@catch_and_report("get_b_qty")
 async def get_b_qty(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        item_id = int(context.user_data['current_id'])
-        qty = int(update.message.text)
-        context.user_data['keranjang'][item_id] = qty
-        kb = ReplyKeyboardMarkup([['Tambah Barang Lagi', 'Selesai & Bayar']], resize_keyboard=True)
-        await update.message.reply_text("Masuk keranjang!", reply_markup=kb)
+        qty           = int(update.message.text)
+        stok_tersedia = context.user_data.get('current_stok', 0)
+        item_id       = int(context.user_data['current_id'])
+        qty_lama      = context.user_data.get('keranjang', {}).get(item_id, 0)
+        qty_total     = qty_lama + qty
+
+        if qty <= 0:
+            await update.message.reply_text("❌ Jumlah harus lebih dari 0!")
+            return B_QTY
+        if qty > stok_tersedia:
+            await update.message.reply_text(f"❌ Stok tidak cukup! Maksimal *{stok_tersedia}* unit.", parse_mode='Markdown')
+            return B_QTY
+        if qty_total > stok_tersedia:
+            await update.message.reply_text(
+                f"❌ Total jadi {qty_total}, tapi stok hanya {stok_tersedia}!\n"
+                f"Sudah ada {qty_lama} di keranjang. Tambah maks {stok_tersedia - qty_lama} lagi.",
+                parse_mode='Markdown'
+            )
+            return B_QTY
+
+        context.user_data['keranjang'][item_id] = qty_total
+        pesan = f"✅ *{context.user_data['current_nama']}* x{qty} masuk keranjang!"
+        if qty_lama > 0: pesan += f"\n_(total di keranjang: {qty_total})_"
+        await update.message.reply_text(pesan, parse_mode='Markdown', reply_markup=KB_KERANJANG)
         return KONFIRMASI_BELI
-    except:
-        await update.message.reply_text("Masukkan angka!")
+
+    except ValueError:
+        await update.message.reply_text("❌ Masukkan angka!")
         return B_QTY
 
-async def konfirmasi_beli_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    pilihan = update.message.text
-    if pilihan == 'Tambah Barang Lagi':
-        await update.message.reply_text("Masukkan ID Barang selanjutnya:", reply_markup=ReplyKeyboardRemove())
-        return B_ID
-    elif pilihan == 'Selesai & Bayar':
-        status_msg = await update.message.reply_text("⏳ Sedang memproses struk...")
-        total, ringkasan = pembeli.proses_transaksi(update.effective_user.id, context.user_data.get('keranjang', {}))
-        struk = f"🧾 **STRUK BAKULBYTE**\n---\n{ringkasan}\n---\n💰 **TOTAL: Rp{total}**"
-        await status_msg.delete()
-        await update.message.reply_text(struk, parse_mode='Markdown', reply_markup=get_pembeli_keyboard())
-        return MENU_PEMBELI
-    return MENU_PEMBELI
-
-# --- MAIN RUNNER ---
+# ── Main ──────────────────────────────────────────────────────
 def main():
     database.init_db()
+    logger.info("🚀 BakulByte Bot dimulai...")
+
     app = Application.builder().token(TOKEN).build()
-    
-    conv_handler = ConversationHandler(
+    TXT = filters.TEXT & ~filters.COMMAND
+
+    conv = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            MENU_UTAMA: [MessageHandler(filters.TEXT & ~filters.COMMAND, menu_utama_handler)],
-            MENU_ADMIN: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_features)],
-            T_NAMA: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_t_nama)],
-            T_HARGA: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_t_harga)],
-            T_STOK: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_t_stok_final)],
-            E_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_e_id)],
-            E_STOK: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_e_stok_final)],
-            H_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_h_id)],
-            MENU_PEMBELI: [MessageHandler(filters.TEXT & ~filters.COMMAND, pembeli_features)],
-            B_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_b_id)],
-            B_QTY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_b_qty)],
-            KONFIRMASI_BELI: [MessageHandler(filters.TEXT & ~filters.COMMAND, konfirmasi_beli_handler)],
+            MENU_UTAMA:       [CallbackQueryHandler(inline_menu_handler)],
+            MENU_ADMIN:       [MessageHandler(TXT, admin_features)],
+            T_NAMA:           [MessageHandler(TXT, get_t_nama)],
+            T_HARGA:          [MessageHandler(TXT, get_t_harga)],
+            T_STOK:           [MessageHandler(TXT, get_t_stok_final)],
+            E_ID:             [MessageHandler(TXT, get_e_id)],
+            E_STOK:           [MessageHandler(TXT, get_e_stok_final)],
+            H_ID:             [MessageHandler(TXT, get_h_id)],
+            KONFIRMASI_HAPUS: [MessageHandler(TXT, eksekusi_hapus)],
+            MENU_PEMBELI:     [CallbackQueryHandler(inline_pembeli_handler)],
+            B_ID:             [MessageHandler(TXT, get_b_id)],
+            B_QTY:            [MessageHandler(TXT, get_b_qty)],
+            KONFIRMASI_BELI:  [CallbackQueryHandler(inline_keranjang_handler)],
+            AI_CHAT:          [MessageHandler(TXT, ai_chat_handler), CallbackQueryHandler(ai_inline_handler)],
         },
-        fallbacks=[CommandHandler('start', start)]
+        fallbacks=[CommandHandler('start', start)],
+        allow_reentry=True,
     )
-    
-    app.add_handler(conv_handler)
-    print("🚀 Bot BakulByte Berjalan...")
+
+    app.add_handler(conv)
+    app.add_handler(CommandHandler('ai', ai_command))
+    # [BARU] Command simulasi error — khusus Admin
+    app.add_handler(CommandHandler('test_error', test_error))
+
+    logger.info("✅ Semua handler terdaftar. Bot siap menerima pesan.")
+    print("🚀 Bot BakulByte + AI (Groq) Berjalan...")
     app.run_polling()
 
 if __name__ == '__main__':
     main()
+
