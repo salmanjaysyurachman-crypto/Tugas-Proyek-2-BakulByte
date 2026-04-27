@@ -1,46 +1,39 @@
-import os
-import logging
+import os, logging
 from dotenv import load_dotenv
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import (
-    Application, CommandHandler, MessageHandler, 
-    filters, ContextTypes, ConversationHandler
-)
-
-# Import modul internal
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes, ConversationHandler
 import database, admin, pembeli
-
-# Setup Logging agar kita bisa lihat error di terminal
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-    level=logging.INFO
-)
+from struk_pdf import buat_struk_pdf
+from ai_cs import tanya_ai, reset_riwayat
+from logger import setup_logging, kirim_notif_crash, catch_and_report
 
 load_dotenv()
-TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")
+setup_logging()
+logger = logging.getLogger(__name__)
 
-# Definisi States
+TOKEN    = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID")
+for key, val in [("BOT_TOKEN", TOKEN), ("ADMIN_ID", ADMIN_ID), ("GROQ_API_KEY", os.getenv("GROQ_API_KEY"))]:
+    if not val: raise ValueError(f"{key} belum diset di file .env!")
+
 (MENU_UTAMA, MENU_ADMIN, MENU_PEMBELI, 
  T_NAMA, T_HARGA, T_STOK, 
- E_ID, E_STOK, 
- H_ID,
- B_ID, B_QTY, KONFIRMASI_BELI) = range(12)
+ E_ID, E_STOK, H_ID, KONFIRMASI HAPUS,
+ B_ID, B_QTY, KONFIRMASI_BELI) = range(14)
 
-# --- KEYBOARD HELPERS ---
-def get_main_keyboard():
-    return ReplyKeyboardMarkup([['Admin', 'Pembeli'], ['Keluar']], resize_keyboard=True)
+ef ikb(*rows): return InlineKeyboardMarkup([[InlineKeyboardButton(t, callback_data=d) for t, d in row] for row in rows])
+BACK_HOME   = ikb([("🔙 Kembali", "back_home")])
+KB_WELCOME  = ikb([("🛒 Lihat Barang","menu_lihat"),("👤 Mode Admin","menu_admin")],
+                   [("🛍 Beli Barang","menu_beli"),  ("🤖 Tanya AI","menu_ai")],
+                   [("📞 Kontak","menu_kontak"),      ("ℹ️ Tentang Kami","menu_tentang")],
+                   [("🕐 Jam Operasional","menu_jam")])
+KB_PEMBELI  = ikb([("🛒 Lihat Barang","pb_lihat"),("🛍 Beli Barang","pb_beli")],
+                   [("🤖 Tanya AI","pb_ai"),        ("🔙 Menu Utama","back_home")])
+KB_KERANJANG= ikb([("➕ Tambah Barang Lagi","kb_tambah"),("💳 Selesai & Bayar","kb_bayar")])
+KB_AI       = ikb([("🔄 Reset Obrolan","ai_reset"),("🔙 Menu Utama","back_home")])
+KB_ADMIN    = ReplyKeyboardMarkup([['Tambah Barang','Edit Stok'],['Hapus Barang','Lihat Barang'],
+                                    ['Laporan Harian','Laporan Bulanan'],['Kembali']], resize_keyboard=True)
 
-def get_admin_keyboard():
-    return ReplyKeyboardMarkup([
-        ['Tambah Barang', 'Edit Stok'],
-        ['Hapus Barang', 'Lihat Barang'],
-        ['Laporan Harian', 'Laporan Bulanan'],
-        ['Kembali']
-    ], resize_keyboard=True)
-
-def get_pembeli_keyboard():
-    return ReplyKeyboardMarkup([['Lihat Barang', 'Beli Barang'], ['Kembali']], resize_keyboard=True)
 
 # --- FUNGSI ENTRY POINT ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
