@@ -153,3 +153,65 @@ def buat_struk_pdf(
     Returns:
         Path file PDF yang dihasilkan.
     """
+
+    if output_path is None:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = f"struk_{user_id}_{ts}.pdf"
+
+    now = datetime.now()
+    no_struk = f"BB-{now.strftime('%Y%m%d%H%M%S')}-{str(user_id)[-4:]}"
+    tgl_str  = now.strftime("%d %B %Y, %H:%M")
+
+    c = canvas.Canvas(output_path, pagesize=A6)
+    c.setTitle("Struk Belanja BakulByte")
+
+    # ── Header ───────────────────────────────────────────────
+    _draw_header(c, PAGE_W, PAGE_H)
+
+    # ── Info transaksi ────────────────────────────────────────
+    y = PAGE_H - 42 * mm
+    _draw_info_row(c, y, "Pembeli",  user_name,  PAGE_W)
+    y -= 4.5 * mm
+    _draw_info_row(c, y, "Tanggal",  tgl_str,    PAGE_W)
+    y -= 4.5 * mm
+    _draw_info_row(c, y, "Kasir",    "BakulBot", PAGE_W)
+
+    y -= 3 * mm
+    _draw_divider(c, y, PAGE_W)
+
+    # ── Label kolom ──────────────────────────────────────────
+    y -= 5 * mm
+    margin = 8 * mm
+    c.setFont("Helvetica-Bold", 7)
+    c.setFillColor(HIJAU_TUA)
+    c.drawString(margin, y, "ITEM")
+    c.drawRightString(PAGE_W - margin, y, "SUBTOTAL")
+    y -= 3 * mm
+    _draw_divider(c, y, PAGE_W, dashed=True)
+    y -= 5 * mm
+
+    # ── Baris item ───────────────────────────────────────────
+    for item in items:
+        y = _draw_item_row(
+            c, y,
+            item["nama"], item["qty"],
+            item["harga"], item["subtotal"],
+            PAGE_W
+        )
+        # Cek sisa ruang
+        if y < 35 * mm:
+            # (Untuk struk panjang, bisa tambah halaman — skip untuk sekarang)
+            break
+
+    y -= 2 * mm
+    _draw_divider(c, y, PAGE_W)
+    y -= 6 * mm
+
+    # ── Kotak Total ──────────────────────────────────────────
+    y = _draw_total_box(c, y, total, PAGE_W)
+
+    # ── Footer ───────────────────────────────────────────────
+    _draw_footer(c, y - 2*mm, PAGE_W, no_struk)
+
+    c.save()
+    return output_path
