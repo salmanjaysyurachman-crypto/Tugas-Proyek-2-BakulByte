@@ -106,3 +106,50 @@ def _draw_total_box(c: canvas.Canvas, y, total, page_w):
     c.drawRightString(page_w - margin - 4*mm, mid_y, f"Rp{total:,.0f}")
 
     return y - box_h - 4*mm
+
+def _draw_footer(c: canvas.Canvas, y, page_w, no_struk):
+    margin = 8 * mm
+
+    # No struk
+    c.setFont("Helvetica", 6.5)
+    c.setFillColor(ABU_MUDA)
+    c.drawCentredString(page_w / 2, y, f"No. Struk: {no_struk}")
+
+    y -= 4 * mm
+    # Garis dekoratif
+    c.setStrokeColor(KUNING_AKSEN)
+    c.setLineWidth(1.5)
+    c.line(margin, y, page_w - margin, y)
+
+    y -= 5 * mm
+    c.setFont("Helvetica-Bold", 7.5)
+    c.setFillColor(HIJAU_TUA)
+    c.drawCentredString(page_w / 2, y, "Terima kasih sudah berbelanja!")
+
+    y -= 4 * mm
+    c.setFont("Helvetica", 6.5)
+    c.setFillColor(ABU_MUDA)
+    c.drawCentredString(page_w / 2, y, "Barang yang sudah dibeli tidak dapat dikembalikan.")
+
+
+# ─────────────────────────────────────────────────────────────
+def buat_struk_pdf(
+    user_name: str,
+    user_id: int | str,
+    items: list[dict],   # [{"nama": str, "qty": int, "harga": float, "subtotal": float}]
+    total: float,
+    output_path: str = None,
+) -> str:
+    """
+    Membuat struk PDF keren untuk transaksi.
+
+    Args:
+        user_name   : Nama pembeli (dari Telegram)
+        user_id     : ID Telegram pembeli
+        items       : List item yang dibeli
+        total       : Total harga
+        output_path : Path file output (opsional, auto-generate jika None)
+
+    Returns:
+        Path file PDF yang dihasilkan.
+    """
