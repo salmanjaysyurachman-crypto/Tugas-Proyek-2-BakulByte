@@ -73,3 +73,36 @@ def _draw_item_row(c: canvas.Canvas, y, nama, qty, harga_satuan, subtotal, page_
     margin = 8 * mm
     col_qty   = 22 * mm
     col_harga = 50 * mm
+
+    c.setFont("Helvetica-Bold", 7.5)
+    c.setFillColor(ABU_GELAP)
+    c.drawString(margin, y, nama[:28])  # truncate panjang
+
+    y2 = y - 4 * mm
+    c.setFont("Helvetica", 7)
+    c.setFillColor(ABU_MUDA)
+    c.drawString(margin, y2, f"x{qty}")
+    c.drawString(margin + col_qty, y2, f"@ Rp{harga_satuan:,.0f}")
+    c.setFillColor(HIJAU_TUA)
+    c.setFont("Helvetica-Bold", 7.5)
+    c.drawRightString(page_w - margin, y2, f"Rp{subtotal:,.0f}")
+
+    return y2 - 5 * mm   # kembalikan posisi Y berikutnya
+
+
+def _draw_total_box(c: canvas.Canvas, y, total, page_w):
+    margin = 8 * mm
+    box_h  = 11 * mm
+
+    # Kotak total
+    c.setFillColor(HIJAU_TUA)
+    c.roundRect(margin, y - box_h, page_w - 2*margin, box_h, 3*mm, fill=1, stroke=0)
+
+    mid_y = y - box_h / 2 - 1.5*mm
+    c.setFillColor(PUTIH)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(margin + 4*mm, mid_y, "TOTAL PEMBAYARAN")
+    c.setFont("Helvetica-Bold", 10)
+    c.drawRightString(page_w - margin - 4*mm, mid_y, f"Rp{total:,.0f}")
+
+    return y - box_h - 4*mm
