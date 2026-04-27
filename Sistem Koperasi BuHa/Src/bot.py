@@ -261,6 +261,104 @@ async def inline_pembeli_handler(update: Update, context: ContextTypes.DEFAULT_T
 
     return MENU_PEMBELI
 
+@catch_and_report("inline_keranjang_handler")
+async def inline_keranjang_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "kb_tambah":
+        items = pembeli.get_semua_barang()
+        if not items:
+            await query.message.reply_text("🏪 Stok sudah habis semua.")
+            return KONFIRMASI_BELI
+        msg = fmt_produk(items, "beli") + "\n\nMasukkan *ID Barang* selanjutnya:"
+        await query.message.reply_text(msg, parse_mode='Markdown')
+        return B_ID
+
+    elif query.data == "kb_bayar":
+        status_msg = await query.message.reply_text("⏳ Sedang memproses transaksi...")
+        user = update.effective_user
+        total_str, ringkasan, items_data = pembeli.proses_transaksi(
+            user.id, context.user_data.get('keranjang', {})
+        )
+        context.user_data['keranjang'] = {}
+
+        if total_str == "0" and not items_data:
+            await status_msg.delete()
+            await query.message.reply_text(
+                "❌ Transaksi gagal! Mungkin stok habis.\nSilakan coba lagi.",
+                reply_markup=KB_PEMBELI
+            )
+            return MENU_PEMBELI
+
+        await status_msg.delete()
+        await query.message.reply_text(
+            f"🧾 *STRUK BAKULBYTE*\n━━━━━━━━━━━━━━━━━━\n{ringkasan}\n━━━━━━━━━━━━━━━━━━\n💰 *TOTAL: Rp{total_str}*",
+            parse_mode='Markdown', reply_markup=KB_PEMBELI
+        )
+
+        if items_data:
+            try:
+                pdf_path = buat_struk_pdf(
+                    user_name=user.full_name or user.first_name,
+                    user_id=user.id, items=items_data,
+                    total=float(total_str.replace(",", ""))
+                )
+                with open(pdf_path, 'rb') as f:
+                    await query.message.reply_document(document=f, filename="Struk_BakulByte.pdf",
+                                                        caption="📄 Struk PDF kamu sudah siap!")
+            except Exception as e:
+                logger.error(f"Gagal kirim PDF: {e}", exc_info=True)
+            finally:
+                try: os.remove(pdf_path)
+                except OSError: pass
+
+    return MENU_PEMBELI
+
+# ── Admin Features ────────────────────────────────────────────
+@catch_and_report("admin_features")
+async def admin_features(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+
+    if text == 'Tambah Barang':
+        await update.message.reply_text("Masukkan NAMA barang baru:", reply_markup=ReplyKeyboardRemove())
+        return T_NAMA
+    elif text == 'Edit Stok':
+        await update.message.reply_text("Masukkan ID Barang yang stoknya ingin diedit:", reply_markup=ReplyKeyboardRemove())
+        return E_ID
+    elif text == 'Hapus Barang':
+        await update.message.reply_text("Masukkan ID Barang yang akan DIHAPUS:", reply_markup=ReplyKeyboardRemove())
+        return H_ID
+    elif text == 'Lihat Barang':
+        conn = database.get_db()
+        items = conn.execute("SELECT * FROM produk").fetchall()
+        conn.close()
+        msg = ("📦 *STOK GUDANG (SEMUA PRODUK)*\n\n" +
+               "\n".join(f"ID: {i['id']} | {i['nama']} | Stok: {i['stok']} | Rp{i['harga']:,.0f}" for i in items)
+               if items else "Gudang kosong.")
+        await update.message.reply_text(msg, parse_mode='Markdown')
+        return MENU_ADMIN
+    elif 'Laporan' in text:
+        mode = 'harian' if 'Harian' in text else 'bulanan'
+        file_path = None
+        try:
+            file_path = admin.export_laporan(mode)
+            with open(file_path, 'rb') as f:
+                await update.message.reply_document(document=f, caption=f"📊 Laporan {mode.capitalize()} BakulByte")
+        except Exception as e:
+            logger.error(f"Gagal export laporan: {e}", exc_info=True)
+            await update.message.reply_text("❌ Gagal membuat laporan.")
+        finally:
+            if file_path:
+                try: os.remove(file_path)
+                except OSError: pass
+        return MENU_ADMIN
+    elif text == 'Kembali':
+        await update.message.reply_text(WELCOME_TEXT, reply_markup=KB_WELCOME, parse_mode='Markdown')
+        return MENU_UTAMA
+
+    return MENU_ADMIN
+
 async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pilihan = update.message.text
     user_id = str(update.effective_user.id)
