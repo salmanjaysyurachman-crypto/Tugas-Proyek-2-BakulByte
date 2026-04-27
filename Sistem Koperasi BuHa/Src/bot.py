@@ -211,6 +211,55 @@ async def inline_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     return MENU_UTAMA
 
+@catch_and_report("ai_chat_handler")
+async def ai_chat_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.chat.send_action("typing")
+    balasan = tanya_ai(str(update.effective_user.id), update.message.text)
+    await update.message.reply_text(f"🤖 *BakulBot AI:*\n\n{balasan}", parse_mode='Markdown', reply_markup=KB_AI)
+    return AI_CHAT
+
+@catch_and_report("ai_inline_handler")
+async def ai_inline_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    if query.data == "ai_reset":
+        reset_riwayat(str(update.effective_user.id))
+        await query.message.reply_text("🔄 Riwayat obrolan direset!", reply_markup=KB_AI)
+        return AI_CHAT
+    await kirim_welcome(query.message, context)
+    return MENU_UTAMA
+
+# ── Pembeli ───────────────────────────────────────────────────
+@catch_and_report("inline_pembeli_handler")
+async def inline_pembeli_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data  = query.data
+
+    if data == "pb_lihat":
+        msg = fmt_produk(pembeli.get_semua_barang())
+        back_kb = ikb([("🔙 Kembali", "pb_back")])
+        await query.message.reply_text(msg, parse_mode='Markdown', reply_markup=back_kb)
+
+    elif data == "pb_beli":
+        items = pembeli.get_semua_barang()
+        if not items:
+            await query.message.reply_text("🏪 Stok sedang kosong.")
+            return MENU_PEMBELI
+        context.user_data['keranjang'] = {}
+        msg = fmt_produk(items, "beli") + "\n\nMasukkan *ID Barang* yang ingin dibeli:"
+        await query.message.reply_text(msg, parse_mode='Markdown')
+        return B_ID
+
+    elif data == "pb_ai":
+        await query.message.reply_text(AI_INTRO_TEXT, parse_mode='Markdown', reply_markup=KB_AI)
+        return AI_CHAT
+
+    elif data in ("pb_back", "back_home"):
+        await kirim_welcome(query.message, context)
+        return MENU_UTAMA
+
+    return MENU_PEMBELI
 
 async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pilihan = update.message.text
