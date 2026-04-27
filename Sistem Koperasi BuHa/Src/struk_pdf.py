@@ -46,3 +46,30 @@ def _draw_header(c: canvas.Canvas, page_w, page_h):
     c.setFillColor(HIJAU_MUDA)
     c.setFont("Helvetica-Oblique", 7)
     c.drawCentredString(page_w / 2, page_h - 29 * mm, "Belanja mudah, harga bersahabat")
+
+    def _draw_info_row(c: canvas.Canvas, y, label, value, page_w):
+    """Baris info dua kolom (label kiri, value kanan)."""
+    margin = 8 * mm
+    c.setFont("Helvetica", 7)
+    c.setFillColor(ABU_MUDA)
+    c.drawString(margin, y, label)
+    c.setFillColor(ABU_GELAP)
+    c.drawRightString(page_w - margin, y, value)
+
+
+def _draw_divider(c: canvas.Canvas, y, page_w, dashed=False):
+    margin = 8 * mm
+    c.setStrokeColor(colors.HexColor("#DDDDDD"))
+    c.setLineWidth(0.5)
+    if dashed:
+        c.setDash(2, 3)
+    else:
+        c.setDash()
+    c.line(margin, y, page_w - margin, y)
+    c.setDash()
+
+
+def _draw_item_row(c: canvas.Canvas, y, nama, qty, harga_satuan, subtotal, page_w):
+    margin = 8 * mm
+    col_qty   = 22 * mm
+    col_harga = 50 * mm
