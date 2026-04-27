@@ -34,15 +34,40 @@ KB_AI       = ikb([("🔄 Reset Obrolan","ai_reset"),("🔙 Menu Utama","back_ho
 KB_ADMIN    = ReplyKeyboardMarkup([['Tambah Barang','Edit Stok'],['Hapus Barang','Lihat Barang'],
                                     ['Laporan Harian','Laporan Bulanan'],['Kembali']], resize_keyboard=True)
 
+WELCOME_TEXT = (
+    "✨ *Selamat Datang di Koperasi BakulByte!* ✨\n\n"
+    "🏪 Koperasi serba ada dengan harga bersahabat!\n"
+    "🛒 Berbagai pilihan produk tersedia\n"
+    "💰 Harga terjangkau untuk semua kalangan\n"
+    "📄 Struk PDF otomatis setiap transaksi\n"
+    "🤖 Asisten AI siap membantu 24 jam\n\n"
+    "Silakan pilih menu di bawah ini 👇"
+)
+AI_INTRO_TEXT = (
+    "🤖 *BakulBot AI - Customer Service*\n\n"
+    "Halo! Saya siap membantu menjawab pertanyaan seputar produk, harga, stok, dan informasi koperasi.\n\n"
+    "Silakan ketik pertanyaanmu!\n"
+    "_Contoh: \"Ada mie instan tidak? Berapa harganya?\"_\n\n"
+    "Ketik /start untuk kembali ke menu utama."
+)
 
-# --- FUNGSI ENTRY POINT ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🏪 **Selamat Datang di Koperasi BakulByte!**\nSilakan pilih role Anda:",
-        reply_markup=get_main_keyboard(),
-        parse_mode='Markdown'
+def fmt_produk(items, mode="lihat"):
+    if not items: return "🏪 Stok sedang kosong."
+    header = "🛒 *BARANG TERSEDIA*" if mode == "lihat" else "📋 *DAFTAR BARANG*"
+    baris = "\n".join(
+        f"🆔 {i['id']} | {i['nama']} | Rp{i['harga']:,.0f} | Stok: {i['stok']}" for i in items
     )
-    return MENU_UTAMA
+    return f"{header}\n\n{baris}"
+
+async def kirim_welcome(target, context):
+    context.user_data.clear()
+    await target.reply_text(WELCOME_TEXT, reply_markup=KB_WELCOME, parse_mode='Markdown')
+
+def get_produk_by_id(item_id):
+    conn = database.get_db()
+    item = conn.execute("SELECT * FROM produk WHERE id = ?", (item_id,)).fetchone()
+    conn.close()
+    return item
 
 async def menu_utama_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pilihan = update.message.text
