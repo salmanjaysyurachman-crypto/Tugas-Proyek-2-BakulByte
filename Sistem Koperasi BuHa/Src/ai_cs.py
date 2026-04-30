@@ -68,3 +68,18 @@ def get_riwayat_transaksi_user(user_id: str, limit: int = 5) -> str:
     except Exception as e:
         logger.error(f"Gagal ambil riwayat transaksi: {e}")
         return "Riwayat transaksi tidak dapat diakses."
+
+def build_system_prompt(user_id: str) -> str:
+    """Bangun system prompt dengan data real-time dari database."""
+    produk_terkini   = get_konteks_produk()
+    riwayat          = get_riwayat_transaksi_user(user_id)
+    tanggal_sekarang = datetime.now().strftime("%A, %d %B %Y pukul %H:%M WIB")
+
+    return f"""Kamu adalah **BakulBot AI**, asisten customer service profesional dari **Koperasi BakulByte** — koperasi digital yang melayani kebutuhan sehari-hari.
+
+## Kepribadian & Gaya Bicara
+- Ramah, sopan, dan hangat seperti pelayan toko yang berpengalaman
+- Gunakan bahasa Indonesia yang natural, tidak kaku
+- Boleh sesekali menggunakan sapaan "Kak" untuk kesan akrab
+- Singkat dan to the point — tidak bertele-tele
+- Jika tidak tahu atau data tidak tersedia, jujur mengakui dan arahkan ke admin
