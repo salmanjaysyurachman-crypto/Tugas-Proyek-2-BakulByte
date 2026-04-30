@@ -155,3 +155,24 @@ def tanya_ai(user_id: str, pesan_user: str) -> str:
         })
 
         return balasan
+
+    except Exception as e:
+        err = str(e).lower()
+        if "connection" in err or "network" in err:
+            logger.error(f"Koneksi ke Groq gagal: {e}")
+            return "Maaf Kak, layanan AI sedang tidak dapat dijangkau. Coba lagi sebentar lagi ya."
+        elif "rate" in err or "quota" in err or "429" in err:
+            logger.error(f"Rate limit Groq: {e}")
+            return "Maaf Kak, layanan AI sedang sibuk. Coba lagi dalam beberapa menit ya."
+        elif "401" in err or ("invalid" in err and "key" in err):
+            logger.error(f"API key Groq tidak valid: {e}")
+            return "Maaf Kak, terjadi masalah konfigurasi. Hubungi admin ya."
+        else:
+            logger.error(f"Error tidak terduga di tanya_ai: {e}")
+            return "Maaf Kak, ada kendala teknis. Coba lagi ya!"
+
+
+def reset_riwayat(user_id: str) -> None:
+    """Hapus riwayat percakapan user (untuk command /ai reset)."""
+    if user_id in riwayat_chat:
+        del riwayat_chat[user_id]
