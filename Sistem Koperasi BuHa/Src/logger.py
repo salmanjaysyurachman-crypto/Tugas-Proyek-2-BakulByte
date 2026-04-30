@@ -96,4 +96,23 @@ async def kirim_notif_crash(
     except Exception as send_err:
         logging.getLogger(__name__).error(
             f"Gagal mengirim notifikasi crash ke Admin: {send_err}"
-        )
+        ) # ── Decorator: otomatis tangkap & laporkan error di handler ───
+def catch_and_report(konteks: str = ""):
+    """
+    Decorator untuk handler bot.
+    Menangkap semua exception, mencatatnya ke log, dan
+    mengirim notifikasi ke Admin — tanpa menghentikan bot.
+
+    Pemakaian:
+        @catch_and_report("nama_handler")
+        async def handler(update, context): ...
+    """
+def decorator(func):
+        @wraps(func)
+        async def wrapper(update, context, *args, **kwargs):
+            nama = konteks or func.__name__
+            user_id = None
+            try:
+                if update and update.effective_user:
+                    user_id = update.effective_user.id
+                return await func(update, context, *args, **kwargs)
