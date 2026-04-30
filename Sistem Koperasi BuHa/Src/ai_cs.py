@@ -34,3 +34,15 @@ def get_konteks_produk() -> str:
 
         if not produk:
             return "Saat ini tidak ada produk yang tersedia di koperasi."
+        
+        baris = []
+        for p in produk:
+            status = "✅ Tersedia" if p["stok"] > 0 else "❌ Habis"
+            baris.append(
+                f"- ID {p['id']} | {p['nama']} | Rp{p['harga']:,.0f} | Stok: {p['stok']} | {status}"
+            )
+        return "\n".join(baris)
+
+    except Exception as e:
+        logger.error(f"Gagal ambil produk untuk AI: {e}")
+        return "Data produk sedang tidak dapat diakses."
