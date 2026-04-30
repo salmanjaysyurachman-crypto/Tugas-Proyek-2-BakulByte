@@ -108,3 +108,50 @@ Berikut adalah daftar produk koperasi saat ini:
 - Jelaskan cara bertransaksi di bot
 - Bantu pengguna menemukan produk yang cocok dengan budget
 - Informasikan jam operasional: Senin–Jumat 08.00–17.00, Sabtu 08.00–13.00"""
+
+def tanya_ai(user_id: str, pesan_user: str) -> str:
+    """
+    Kirim pesan ke AI dengan konteks database dan riwayat percakapan.
+
+    Args:
+        user_id    : ID Telegram pengguna (sebagai string)
+        pesan_user : Pesan yang dikirim pengguna
+
+    Returns:
+        Respons teks dari AI
+    """
+    if user_id not in riwayat_chat:
+        riwayat_chat[user_id] = []
+
+    riwayat_chat[user_id].append({
+        "role": "user",
+        "content": pesan_user
+    })
+
+    # Batasi riwayat agar tidak terlalu panjang
+    if len(riwayat_chat[user_id]) > MAX_HISTORY * 2:
+        riwayat_chat[user_id] = riwayat_chat[user_id][-(MAX_HISTORY * 2):]
+
+    try:
+        system_prompt = build_system_prompt(user_id)
+
+        messages_with_system = [
+            {"role": "system", "content": system_prompt}
+        ] + riwayat_chat[user_id]
+
+        # get_client() baru membuat Groq() di sini, setelah .env pasti sudah terbaca
+        response = get_client().chat.completions.create(
+            model=GROQ_MODEL,
+            messages=messages_with_system,
+            max_tokens=512,
+            temperature=0.7,
+        )
+
+        balasan = response.choices[0].message.content
+
+        riwayat_chat[user_id].append({
+            "role": "assistant",
+            "content": balasan
+        })
+
+        return balasan
