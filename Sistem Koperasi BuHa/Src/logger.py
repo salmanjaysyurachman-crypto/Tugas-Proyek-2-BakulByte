@@ -116,3 +116,16 @@ def decorator(func):
                 if update and update.effective_user:
                     user_id = update.effective_user.id
                 return await func(update, context, *args, **kwargs)
+            except Exception as exc:
+                logger = logging.getLogger(func.__module__)
+                logger.error(
+                    f"[{nama}] user_id={user_id} | "
+                    f"{type(exc).__name__}: {exc}",
+                    exc_info=True
+                )
+                await kirim_notif_crash(
+                    bot=context.bot,
+                    exc=exc,
+                    konteks=nama,
+                    user_id=user_id
+                )
