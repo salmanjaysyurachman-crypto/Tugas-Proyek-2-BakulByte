@@ -67,3 +67,22 @@ async def kirim_notif_crash(
             "ADMIN_ID tidak diset — notifikasi crash tidak dikirim."
         )
         return
+    tb = traceback.format_exc()
+    # Potong traceback agar tidak melampaui batas 4096 karakter Telegram
+    if len(tb) > 900:
+        tb = "..." + tb[-900:]
+
+    waktu = datetime.now().strftime("%d %b %Y, %H:%M:%S")
+
+    pesan = (
+        "🚨 CRITICAL ERROR — BakulByte Bot\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🕐 Waktu   : {waktu}\n"
+        f"📍 Konteks : {konteks}\n"
+        f"👤 User ID : {user_id or 'N/A'}\n"
+        f"❌ Error   : {type(exc).__name__}: {exc}\n"
+    )
+    if extra:
+        pesan += f"ℹ️ Info    : {extra}\n"
+
+    pesan += f"\n```\n{tb}\n```"
