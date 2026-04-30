@@ -19,3 +19,18 @@ def get_client() -> Groq:
             raise ValueError("GROQ_API_KEY belum diset di file .env!")
         _client = Groq(api_key=api_key)
     return _client
+
+riwayat_chat: dict[str, list] = {}
+
+MAX_HISTORY = 10  
+
+
+def get_konteks_produk() -> str:
+    """Ambil semua produk dari database dan format sebagai teks untuk system prompt."""
+    try:
+        conn = get_db()
+        produk = conn.execute("SELECT id, nama, harga, stok FROM produk").fetchall()
+        conn.close()
+
+        if not produk:
+            return "Saat ini tidak ada produk yang tersedia di koperasi."
