@@ -136,3 +136,13 @@ def decorator(func):
                         if update.callback_query
                         else update.message
                     )
+                    if target:
+                        await target.reply_text(
+                            "⚠️ Maaf, terjadi gangguan teknis. "
+                            "Admin sudah diberitahu. Coba lagi sebentar ya Kak!"
+                        )
+                except Exception:
+                    pass  # jangan crash lagi saat handle crash
+
+        return wrapper
+        return decorator
