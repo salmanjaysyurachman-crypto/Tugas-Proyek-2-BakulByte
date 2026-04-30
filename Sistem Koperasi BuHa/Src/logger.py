@@ -129,3 +129,10 @@ def decorator(func):
                     konteks=nama,
                     user_id=user_id
                 )
+                # Beri tahu user bahwa ada masalah (bukan pesan teknis)
+                try:
+                    target = (
+                        update.callback_query.message
+                        if update.callback_query
+                        else update.message
+                    )
