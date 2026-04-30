@@ -43,3 +43,27 @@ def setup_logging() -> logging.Logger:
     root.addHandler(file_handler)
 
     return root
+
+# ── Kirim notifikasi crash ke Admin Telegram ──────────────────
+async def kirim_notif_crash(
+    bot,
+    exc: Exception,
+    konteks: str = "tidak diketahui",
+    user_id: str | int | None = None,
+    extra: str = ""
+) -> None:
+    """
+    Mengirim pesan error ke Admin Telegram.
+
+    Args:
+        bot      : objek telegram.Bot
+        exc      : exception yang terjadi
+        konteks  : nama fungsi / handler tempat error terjadi
+        user_id  : ID user yang sedang berinteraksi (opsional)
+        extra    : informasi tambahan bebas (opsional)
+    """
+    if not ADMIN_ID:
+        logging.getLogger(__name__).warning(
+            "ADMIN_ID tidak diset — notifikasi crash tidak dikirim."
+        )
+        return
