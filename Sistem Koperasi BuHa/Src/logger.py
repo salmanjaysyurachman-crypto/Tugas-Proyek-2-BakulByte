@@ -25,3 +25,13 @@ def setup_logging() -> logging.Logger:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(fmt)
+
+        # ── Handler: File (WARNING ke atas, dengan rotasi) ────────
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=MAX_BYTES,
+        backupCount=BACKUP_COUNT,
+        encoding="utf-8"
+    )
+    file_handler.setLevel(logging.WARNING)
+    file_handler.setFormatter(fmt)
