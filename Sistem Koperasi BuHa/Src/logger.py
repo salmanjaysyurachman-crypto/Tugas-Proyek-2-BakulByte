@@ -35,3 +35,11 @@ def setup_logging() -> logging.Logger:
     )
     file_handler.setLevel(logging.WARNING)
     file_handler.setFormatter(fmt)
+
+       # ── Root logger ───────────────────────────────────────────
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(console_handler)
+    root.addHandler(file_handler)
+
+    return root
