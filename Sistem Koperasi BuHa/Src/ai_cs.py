@@ -46,3 +46,25 @@ def get_konteks_produk() -> str:
     except Exception as e:
         logger.error(f"Gagal ambil produk untuk AI: {e}")
         return "Data produk sedang tidak dapat diakses."
+    
+def get_riwayat_transaksi_user(user_id: str, limit: int = 5) -> str:
+    """Ambil riwayat transaksi user terakhir untuk konteks personal."""
+    try:
+        conn = get_db()
+        transaksi = conn.execute(
+            "SELECT items, total_harga, tanggal FROM transaksi WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+            (user_id, limit)
+        ).fetchall()
+        conn.close()
+
+        if not transaksi:
+            return "Pengguna ini belum pernah bertransaksi."
+
+        baris = []
+        for t in transaksi:
+            baris.append(f"- [{t['tanggal']}] Total: Rp{t['total_harga']:,.0f} | Item: {t['items'][:80]}...")
+        return "\n".join(baris)
+
+    except Exception as e:
+        logger.error(f"Gagal ambil riwayat transaksi: {e}")
+        return "Riwayat transaksi tidak dapat diakses."
