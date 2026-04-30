@@ -86,3 +86,14 @@ async def kirim_notif_crash(
         pesan += f"ℹ️ Info    : {extra}\n"
 
     pesan += f"\n```\n{tb}\n```"
+
+    try:
+        await bot.send_message(
+            chat_id=ADMIN_ID,
+            text=pesan,
+            parse_mode="Markdown"
+        )
+    except Exception as send_err:
+        logging.getLogger(__name__).error(
+            f"Gagal mengirim notifikasi crash ke Admin: {send_err}"
+        )
