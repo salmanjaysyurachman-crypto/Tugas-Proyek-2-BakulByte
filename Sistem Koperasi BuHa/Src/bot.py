@@ -47,7 +47,7 @@ AI_INTRO_TEXT = (
     "🤖 *BakulBot AI - Customer Service*\n\n"
     "Halo! Saya siap membantu menjawab pertanyaan seputar produk, harga, stok, dan informasi koperasi.\n\n"
     "Silakan ketik pertanyaanmu!\n"
-    "_Contoh: \"Ada mie instan tidak? Berapa harganya?\"_\n\n"
+    "_Contoh: \"Ada buku tidak? Berapa harganya?\"_\n\n"
     "Ketik /start untuk kembali ke menu utama."
 )
 
